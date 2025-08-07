@@ -38,7 +38,7 @@ public static unsafe class Game
 
     private static readonly HashSet<uint> whitelistedContentTypes = [ 1, 2, 3, 4, 5, 9, 28, 29, 30, 37 ]; // 22 Event, 26 Eureka, 27 Carnivale
 
-    private static readonly AsmPatch alwaysRecordPatch = new("24 06 3C 02 75 23 48", [ 0xEB, 0x1F ], true);
+    private static readonly AsmPatch alwaysRecordPatch = new("24 06 3C 02 75 29 48", [ 0xEB, 0x1F ], true);
     private static readonly AsmPatch removeRecordReadyToastPatch = new("BA CB 07 00 00 48 8B CF E8", [ 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 ], true);
     private static readonly AsmPatch seIsABunchOfClownsPatch = new("F6 40 78 02 74 04 B0 01 EB 02 32 C0 40 84 FF", [ 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 ], true);
     private static readonly AsmPatch instantFadeOutPatch = new("44 8D 47 0A 33 D2", [ null, null, 0x07, 0x90 ], true); // lea r8d, [rdi+0A] -> lea r8d, [rdi]
@@ -64,10 +64,10 @@ public static unsafe class Game
     private static void OnZoneInPacketDetour(ContentsReplayModule* contentsReplayModule, uint gameObjectID, nint packet)
     {
         ContentsReplayModule.onZoneInPacket.Original(contentsReplayModule, gameObjectID, packet);
-        if ((contentsReplayModule->status & 1) == 0) return;
+        /*if ((contentsReplayModule->status & 1) == 0) return;
 
         if (DalamudApi.GameConfig.UiConfig.TryGetBool(nameof(UiConfigOption.CutsceneSkipIsContents), out var b) && b)
-            InitializeRecordingDetour(contentsReplayModule);
+            InitializeRecordingDetour(contentsReplayModule);*/
     }
 
     private static void InitializeRecordingDetour(ContentsReplayModule* contentsReplayModule)
@@ -200,11 +200,11 @@ public static unsafe class Game
         || ContentsReplayModule.replayPacket.Original(contentsReplayModule, segment, data);
 
     public delegate nint FormatAddonTextTimestampDelegate(nint raptureTextModule, uint addonSheetRow, int a3, uint hours, uint minutes, uint seconds, uint a7);
-    [HypostasisSignatureInjection("E8 ?? ?? ?? ?? 8D 4D 64")]
+	[HypostasisSignatureInjection("e8 ?? ?? ?? ?? 48 ?? ?? 8d ?? ?? 48 ?? ?? ?? 48 ?? ?? ?? ?? 48 ?? ?? e8 ?? ?? ?? ?? ff ?? 3b ?? ?? ?? ?? ??")]
     private static Hook<FormatAddonTextTimestampDelegate> FormatAddonTextTimestampHook;
-    private static nint FormatAddonTextTimestampDetour(nint raptureTextModule, uint addonSheetRow, int a3, uint hours, uint minutes, uint seconds, uint a7)
-    {
-        var ret = FormatAddonTextTimestampHook.Original(raptureTextModule, addonSheetRow, a3, hours, minutes, seconds, a7);
+	private static nint FormatAddonTextTimestampDetour(nint raptureTextModule, uint addonSheetRow, int a3, uint hours, uint minutes, uint seconds, uint a7)
+	{
+        var ret = FormatAddonTextTimestampHook.Original(raptureTextModule, addonSheetRow, a3, hours, minutes, seconds,a7);
 
         try
         {
@@ -223,7 +223,7 @@ public static unsafe class Game
         {
             DalamudApi.LogError(e.ToString());
         }
-
+        
         return ret;
     }
 
@@ -556,10 +556,14 @@ public static unsafe class Game
             throw new ApplicationException($"{nameof(Common.ContentsReplayModule)} is not initialized!");
 
         // Utilize an unused function to act as a hook
-        var address = DalamudApi.SigScanner.ScanModule("48 39 43 38 0F 83 ?? ?? ?? ?? 48 8B 4B 30");
-        var functionAddress = ContentsReplayModule.onLogin.Address;
-        GetReplayDataSegmentHook = DalamudApi.GameInteropProvider.HookFromAddress<ContentsReplayModule.GetReplayDataSegmentDelegate>(functionAddress, GetReplayDataSegmentDetour);
-        createGetReplaySegmentHookPatch = new(address,
+        DalamudApi.LogDebug("Creating GetReplayDataSegment hook patch...");
+		var address = DalamudApi.SigScanner.ScanModule("48 39 43 38 0F 83 ?? ?? ?? ?? 48 8B 4B 30");
+        DalamudApi.LogDebug($"GetReplayDataSegment hook patch address: {address:X}");
+		var functionAddress = ContentsReplayModule.onLogin.Address;
+		DalamudApi.LogDebug($"GetReplayDataSegment function address: {functionAddress:X}");
+		GetReplayDataSegmentHook = DalamudApi.GameInteropProvider.HookFromAddress<ContentsReplayModule.GetReplayDataSegmentDelegate>(functionAddress, GetReplayDataSegmentDetour);
+		DalamudApi.LogDebug("GetReplayDataSegment hook created successfully!");
+		createGetReplaySegmentHookPatch = new(address,
             [
                0x48, 0x8B, 0xCB, // mov rcx, rbx
                0xE8, .. BitConverter.GetBytes((int)(functionAddress - (address + 0x8))), // call onLogin

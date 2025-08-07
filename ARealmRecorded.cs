@@ -11,7 +11,9 @@ public class ARealmRecorded(IDalamudPluginInterface pluginInterface) : DalamudPl
     protected override void Initialize()
     {
         Game.Initialize();
-        ReplayPacketManager.Initialize();
+        DalamudApi.LogDebug($"Initializing Game Finish.");
+		ReplayPacketManager.Initialize();
+        DalamudApi.LogDebug($"Initializing ReplayPacketManager Finish.");
         DalamudApi.ToastGui.Toast += OnToast;
     }
 

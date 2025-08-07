@@ -7,7 +7,8 @@ using Dalamud.Interface.Utility;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Hypostasis.Game.Structures;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
+using Dalamud.Game.NativeWrapper;
 
 namespace ARealmRecorded;
 
@@ -66,7 +67,7 @@ public static unsafe class PlaybackControlsUI
             return;
         }
 
-        var addon = (AtkUnitBase*)DalamudApi.GameGui.GetAddonByName("ContentsReplayPlayer");
+        var addon = (AtkUnitBase*)DalamudApi.GameGui.GetAddonByName("ContentsReplayPlayer").Address;
         if (addon == null || (ARealmRecorded.Config.EnablePlaybackControlHiding && !addon->IsVisible && !showUnstuckButton))
         {
             shouldPlaybackControlHide = true;
@@ -124,7 +125,7 @@ public static unsafe class PlaybackControlsUI
 
             ImGui.SameLine();
             ImGui.Button(FontAwesomeIcon.Skull.ToIconString());
-            if (ImGui.BeginPopupContextItem(null, ImGuiPopupFlags.MouseButtonLeft))
+            if (ImGui.BeginPopupContextItem("", ImGuiPopupFlags.MouseButtonLeft))
             {
                 if (ImGui.Selectable(FontAwesomeIcon.DoorOpen.ToIconString()))
                     Common.ContentsReplayModule->overallDataOffset = long.MaxValue;

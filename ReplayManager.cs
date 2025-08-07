@@ -13,9 +13,10 @@ public static unsafe class ReplayManager
     private static byte seekingChapter;
     private static uint seekingOffset;
 
-    private static readonly AsmPatch removeProcessingLimitPatch = new("41 FF C4 48 39 43 38", [ 0x90, 0x90, 0x90 ], true);
+    private static readonly AsmPatch removeProcessingLimitPatch = new("41 ?? ?? 48 39 43 ??", [ 0x90, 0x90, 0x90 ], true);
     private static readonly AsmPatch removeProcessingLimitPatch2 = new("0F 87 ?? ?? ?? ?? 48 8B 0D ?? ?? ?? ?? 33 F6", [ 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 ]);
     private static readonly AsmPatch forceFastForwardPatch = new("0F 83 ?? ?? ?? ?? 41 0F B7 46 02 4D 8D 46 0C", [ 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 ]);
+    private static readonly AsmPatch skipFirstCheckPatch = new("83 78 18 00 74 0E 83 78 20 00 74 08 48 8B CB E8 81 1A 00 00", [ 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 ], true);
 
     public static void PlaybackUpdate(ContentsReplayModule* contentsReplayModule)
     {
